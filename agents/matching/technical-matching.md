@@ -65,6 +65,7 @@ No job technologies → `technical: null`, `status: UNKNOWN`, do not score 0 (0 
 ```json
 {
   "agent": "technical-matching",
+  "status": "success | UNKNOWN",
   "technical": 0.82,
   "exact": ["Node.js", "TypeScript", "AWS", "PostgreSQL"],
   "transferable": [{ "job": "microservices", "via": "Backend engineering" }],

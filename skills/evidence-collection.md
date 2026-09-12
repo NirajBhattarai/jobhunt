@@ -39,7 +39,7 @@ Field rules:
 - `source_url` — the URL actually fetched. Not a guessed canonical URL.
 - `source_type` — from `skills/source-validation.md`.
 - `excerpt` — short quote or structured snippet copied from the page. Empty excerpts are invalid for `FACT`.
-- `observed_at` — timestamp of the fetch, ISO-8601. Not the job's posting date.
+- `observed_at` — timestamp of the fetch, ISO-8601, taken from the runtime's current clock (the orchestrator passes `run_started_at` to every specialist). Never a date recalled from training data. Not the job's posting date.
 - `confidence` — 0.0–1.0 from source reliability and how directly the excerpt supports the claim. Not a vibe score.
 
 ## What counts as evidence

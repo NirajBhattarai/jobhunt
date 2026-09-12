@@ -39,13 +39,15 @@ From the user, or defaults:
 
 Budgets (hard caps for this run):
 
-| Budget | Discovery leads | Jobs to deep-verify | Parallel specialists |
-|--------|-----------------|---------------------|----------------------|
-| `quick` | 15 | 6 | 4 |
-| `standard` | 40 | 12 | 6 |
-| `deep` | 80 | 25 | 8 |
+| Budget | Discovery leads | Jobs to deep-verify | Parallel specialists | Pages per specialist |
+|--------|-----------------|---------------------|----------------------|----------------------|
+| `quick` | 15 | 6 | 4 | 8 |
+| `standard` | 40 | 12 | 6 | 12 |
+| `deep` | 80 | 25 | 8 | 20 |
 
-Default `standard`. Tell the user which budget you are using.
+Default `standard`. Tell the user which budget you are using. Pass `max_pages` to every specialist; a specialist that hits the cap returns `status: partial` with what it has.
+
+Record `run_started_at` (ISO-8601, from the runtime clock) at the top of the run and pass it to every specialist for `observed_at` stamping.
 
 ## What you load first
 
@@ -107,29 +109,68 @@ evidence-report + job-report + research-summary
 
 Specialists never decide "this is a good job." Matching happens after verification.
 
-## How to invoke specialists
+## Run state you maintain
 
-Grok constraint: **subagents cannot spawn subagents**. You are the parent. Specialists are children.
+Keep one in-memory (or on-disk under `research/runs/{date}/state.json`) object and update it as specialists return:
+
+```json
+{
+  "run_id": "2026-09-12-1",
+  "run_started_at": "2026-09-12T02:35:00Z",
+  "budget": "standard",
+  "candidate_snapshot": {},
+  "raw_leads": [],
+  "canonical_jobs": {},
+  "agent_results": {},
+  "agent_failures": [],
+  "already_seen_urls": []
+}
+```
+
+`canonical_jobs` is keyed by `job_key`; each entry accumulates `verification`, `freshness`, `contradictions`, `technology`, `classification`, `technical_matching`, `experience_matching`, `trace`. Output agents read from this object only. Feed `already_seen_urls` back into every later discovery call.
+
+## Runtime adapters
+
+Agent files use generic tool names. Map them to the runtime you are in. Every listed runtime forbids nested spawning: **you are the parent; specialists are leaf children.**
+
+| Generic name in agent files | Grok | Claude Code | Cursor |
+|-----------------------------|------|-------------|--------|
+| `web_search` | `web_search` | `WebSearch` | `WebSearch` |
+| `open_page` / `web_fetch` | `open_page` / `web_fetch` | `WebFetch` | `WebFetch` |
+| `open_page_with_find` | `open_page_with_find` | `WebFetch` + search the returned text | `WebFetch` + search the returned text |
+| spawn specialist | subagent, `subagent_type: "explore"` | `Task`, `subagent_type: "general-purpose"` | `Task`, `subagent_type: "generalPurpose"` |
+| write run files | file write tool | `Write` | `Write` |
+
+Notes:
+
+- In Claude Code and Cursor, the `explore` subagent type is for codebase search and typically has **no web tools**. Use the general-purpose type for any specialist that fetches pages. Matching and output agents (no web) may use either or run in the parent.
+- Where the runtime has no `HEAD` request, treat a successful `WebFetch` as 2xx and a fetch error mentioning 404/410 as that status; anything else is `UNKNOWN`, not closed.
+- If a runtime cannot spawn subagents at all, run specialists sequentially in the parent, one agent file at a time, and never let one agent's draft leak into another's prompt.
+
+## How to invoke specialists
 
 For each specialist:
 
 1. Read the agent file path below so you know the contract
-2. Spawn with `subagent_type: "explore"` (read-only research)
-3. Put the agent path, required skills, and JSON payload in the prompt
+2. Spawn with the runtime's specialist type from the table above
+3. Put the agent path, required skills, `run_started_at`, `max_pages`, and the JSON payload in the prompt
 4. Require the child's **Output Format** as the entire return value
+5. On receipt, stamp `lead_id` on every raw lead per `skills/job-normalization.md`
 
 Template:
 
 ```text
 Read and follow {agent_path} as your complete instructions.
 Also follow {skill_paths}.
+Tool mapping: web_search={...}, open_page={...} (from the Runtime adapters table).
+run_started_at: {iso8601}. Use it for observed_at. max_pages: {n}.
 Do not invent companies, jobs, dates, salaries, or URLs.
 If a fact is not on a page you fetched, use UNCERTAINTY.
 
 INPUT:
 {json}
 
-Return only the Output Format defined in {agent_path}.
+Return only the Output Format defined in {agent_path}, as JSON. No prose before or after.
 ```
 
 | Agent | Path |
@@ -225,7 +266,8 @@ Verification labels (`VERIFIED`, `PARTIALLY_VERIFIED`, `UNVERIFIED`, `STALE`, `C
 | Failure | Action |
 |---------|--------|
 | Specialist spawn fails | Retry once. Then continue |
-| Specialist returns invalid JSON | Retry once with "return only the Output Format" |
+| Specialist returns invalid JSON | Retry once with "return only the Output Format". If still invalid, record the agent in `agent_failures` and treat its stage as `SKIPPED` |
+| Specialist hits `max_pages` | Accept `partial`; do not re-spawn for the same input in this run |
 | GitHub search login-walled | Continue with repos/READMEs; mark GitHub code-search unavailable |
 | Official domain unknown | Skip official fetch; job cannot be `VERIFIED` |
 | Timeout / empty body | `UNCERTAINTY` for that path; do not drop the job |

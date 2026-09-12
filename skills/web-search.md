@@ -37,6 +37,25 @@ If those 404, search `{company} careers` and open the result that sits on the sa
 
 Do not loop dozens of path variants. Three to five official-path attempts plus one web search is enough; then `UNCERTAINTY`.
 
+## ATS public JSON endpoints (prefer over JS-rendered careers pages)
+
+Most ATS boards expose unauthenticated JSON. Once you have observed a company slug on an ATS URL, fetch the API instead of scraping HTML. The response is a `FACT` source of type `verified_job_infra`; record the API URL as `source_url`.
+
+| ATS | Endpoint | Notes |
+|-----|----------|-------|
+| Greenhouse | `https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true` | `jobs[].title`, `location.name`, `absolute_url`, `updated_at`, `id` |
+| Lever | `https://api.lever.co/v0/postings/{slug}?mode=json` | `text` (title), `categories.location`, `hostedUrl`, `createdAt` (epoch ms) |
+| Ashby | `https://api.ashbyhq.com/posting-api/job-board/{slug}?includeCompensation=true` | `jobs[].title`, `location`, `jobUrl`, `publishedAt`, `isRemote` |
+| Workable | `https://apply.workable.com/api/v1/widget/accounts/{slug}` | `jobs[].title`, `url`, `published_on` |
+| SmartRecruiters | `https://api.smartrecruiters.com/v1/companies/{slug}/postings` | `content[].name`, `location.city`, `releasedDate`, `ref` |
+
+Rules:
+
+- The slug must be observed on a URL you fetched or copied from a listing. Never guess a slug from the company name.
+- A 404 from the API means the slug is wrong or the board is gone — record `UNCERTAINTY`, not `CLOSED`, unless a specific job URL also 404s.
+- A job present in the API with a `updated_at` / `publishedAt` field is a date signal for `skills/freshness-analysis.md`.
+- Workday and iCIMS have no stable public JSON; fetch the HTML job page directly.
+
 ## Search-snippet policy
 
 A search snippet that says "Senior Engineer — Acme — Apply" is **not** proof the job is open. Open the URL. If the live page 404s, the snippet is stale.

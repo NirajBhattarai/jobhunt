@@ -58,6 +58,10 @@ If company or role is missing, do not invent a key. Leave the record in a `needs
 
 Set `pipeline` to one of: `github`, `github_org`, `company`, `job_board`. Used by the orchestrator to choose the next agents, not as a quality score.
 
+## Lead ids
+
+Discovery agents do not assign ids. On receipt, the orchestrator stamps every raw lead with `lead_id` = `{agent-short-name}-{n}` (`gh-1`, `repo-3`, `board-2`, `co-1`) in arrival order. Duplicate-detection refers to leads by `lead_id` in `members`; reports keep `lead_id` in `source_urls` provenance. Never renumber after assignment.
+
 ## Raw jobs vs canonical jobs
 
 Discovery output is a raw job: it may be messy. Normalization happens before verification. Do not verify a record that still lacks `company` and `role`.

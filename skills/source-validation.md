@@ -15,7 +15,7 @@ Single source of truth for source types and reliability. Agents label every URL 
 | `verified_job_infra` | 0.92 | Greenhouse, Lever, Ashby, Workday, Workable, SmartRecruiters, iCIMS — company-owned ATS |
 | `company_github` | 0.85 | GitHub org that matches the company's verified website |
 | `engineering_blog` | 0.80 | Company engineering blog announcing a role or stack |
-| `established_job_board` | 0.55 | LinkedIn, Wellfound, web3.career, Remote OK, Nepali portals in `agents.md` |
+| `established_job_board` | 0.55 | LinkedIn, Wellfound, web3.career, Remote OK, Nepali portals in `docs/nepal-portal-scraper-spec.md` |
 | `github_community` | 0.45 | awesome-jobs lists, hiring READMEs, community "who is hiring" repos |
 | `social_community` | 0.25 | X/Twitter, Discord screenshots, HN comments, Reddit |
 

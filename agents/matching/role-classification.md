@@ -90,6 +90,7 @@ Insufficient text → empty labels, `status: UNKNOWN`.
 ```json
 {
   "agent": "role-classification",
+  "status": "success | UNKNOWN",
   "labels": ["NODE_BACKEND", "TYPESCRIPT", "CLOUD"],
   "reasons": {
     "NODE_BACKEND": "Title Senior Node.js Backend Engineer",

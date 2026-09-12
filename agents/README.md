@@ -2,7 +2,7 @@
 
 Markdown agents for job discovery, verification, and matching. The parent session loads `orchestrator.md` and spawns specialists. Specialists do not spawn children.
 
-Keep `../agents.md` (Nepali portal scraper spec). It is a different, unimplemented pipeline. Job-board discovery may use those portal names as sources.
+`../docs/nepal-portal-scraper-spec.md` is a different, unimplemented pipeline. Job-board discovery may use its portal names as sources; nothing else reads it.
 
 ## Graph
 
@@ -48,6 +48,28 @@ orchestrator
 | `freshness-analysis.md` | ACTIVE / RECENT / STALE / CLOSED / UNKNOWN |
 | `duplicate-analysis.md` | Same-job merge rules |
 | `contradiction-analysis.md` | Conflict records |
+
+## Data flow between agents
+
+| Producer | Field(s) | Consumer |
+|----------|----------|----------|
+| discovery agents | `leads[]` (raw) | orchestrator stamps `lead_id`, normalizes → `duplicate-detection` |
+| `duplicate-detection` | `canonical_jobs[]` with `members[]` | orchestrator `canonical_jobs` map, keyed by `job_key` |
+| `company-job-discovery` | `target_role_found`, `matching_positions`, `absence_evidence` | `job-verification`, `freshness-verification`, `contradiction-analysis` |
+| `freshness-verification` | `freshness`, `apply_url_http_status` | `job-verification`, `research-summary` |
+| `job-verification` | `status`, `answers`, `evidence` | `contradiction-analysis`, `job-report`, `evidence-report`, `research-summary` |
+| `technology-research` | `technologies[]` with `required`/`mentioned`/`inferred` | `role-classification`, `technical-matching`, `experience-matching` |
+| matching agents | `technical`, `experience`, `domain`, `why` | `job-report`, `research-summary` (sort key only, never a gate) |
+
+Renaming any field here requires updating every consumer in the same change.
+
+## Adding an agent
+
+1. Copy the section order from an existing file: Mission, Responsibilities, Inputs, Research strategy, Tools / sources, Step-by-step workflow, Evidence requirements, Cross-checking rules, Failure handling, Output format, Quality checklist, Do not, Examples
+2. Use generic tool names (`web_search`, `open_page`); the orchestrator maps them per runtime
+3. Point at `../skills/` for schemas instead of restating them
+4. Include `"agent"` and `"trace"` in the Output Format, and `"status"` if the agent can fail
+5. Add the file to the graph above, to the path table in `orchestrator.md`, and to the data-flow table if another agent consumes it
 
 ## How to run
 

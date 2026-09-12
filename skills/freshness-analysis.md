@@ -43,13 +43,22 @@ If no signal exists, `posting_date` is `null` and the label is `UNKNOWN` unless 
 2. Official/ATS 200 with matching title → `ACTIVE` even if a community list is old
 3. Official page loads but the role is absent → not `ACTIVE`; usually `STALE` or `CLOSED` depending on wording; if wording is unclear, `UNKNOWN` plus a `CONFLICT` with the original lead
 
-## Thresholds
+## Decision order
 
-Measured from `observed_at` to the best observed date:
+Apply in this order; stop at the first rule that fires.
 
-- ≤ 14 days and official/ATS live → `ACTIVE` (if role matches)
-- ≤ 30 days, no official confirmation → `RECENT`
-- \> 60 days, no official live match → `STALE`
-- Otherwise → `UNKNOWN`
+1. Official/ATS fetched this run and returns 404/410, or states filled/closed → `CLOSED`
+2. Official/ATS fetched this run, 200, title matches, apply URL works → `ACTIVE` (age of any community date is irrelevant)
+3. Official/ATS fetched this run, 200, role absent → `STALE` if a third-party still lists it; `UNKNOWN` + `CONFLICT` if the page wording is ambiguous
+4. No official fetch this run → use date thresholds below
 
-Do not use other thresholds.
+## Date thresholds (only when rule 4 applies)
+
+Measured from `observed_at` to the best observed date signal:
+
+- ≤ 30 days → `RECENT`
+- 31–60 days → `UNKNOWN` (note the age in `signals`)
+- \> 60 days → `STALE`
+- No date signal → `UNKNOWN`
+
+Do not use other thresholds. Do not output `ACTIVE` from dates alone.

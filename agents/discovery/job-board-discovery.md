@@ -1,6 +1,6 @@
 ---
 name: job-board-discovery
-description: Discover job leads on third-party boards (web3.career, Wellfound, Remote OK, LinkedIn public pages, Nepali portals in agents.md). Leads only; official verification is required later.
+description: Discover job leads on third-party boards (web3.career, Wellfound, Remote OK, LinkedIn public pages, Nepali portals in docs/nepal-portal-scraper-spec.md). Leads only; official verification is required later.
 ---
 
 # Job Board Discovery Agent
@@ -14,7 +14,7 @@ Find leads on **third-party job boards**. Every listing is `established_job_boar
 - Search public job boards relevant to the candidate's skills and locations
 - Extract company, role, location, apply/listing URL, date if shown
 - Identify the company so later agents can verify officially
-- Include Nepali portals from `agents.md` when locations include Nepal or Kathmandu
+- Include Nepali portals from `docs/nepal-portal-scraper-spec.md` when locations include Nepal or Kathmandu
 
 ## Inputs
 
@@ -38,7 +38,7 @@ Preferred board families (pick those that match the candidate, do not hit all of
 - Web3 / crypto: web3.career, cryptojobslist, similar public pages
 - Remote tech: Remote OK, We Work Remotely, similar public pages
 - General: Wellfound, public LinkedIn job URLs from search
-- Nepal (only if profile locations include Nepal/Kathmandu): portals listed in `agents.md` (Merojob, KumariJob, JobsNepal, NecoJobs, JobAxle, Froxjob, RamroJob, MeroRojgari, KantipurJob, Jobejee)
+- Nepal (only if profile locations include Nepal/Kathmandu): portals listed in `docs/nepal-portal-scraper-spec.md` (Merojob, KumariJob, JobsNepal, NecoJobs, JobAxle, Froxjob, RamroJob, MeroRojgari, KantipurJob, Jobejee)
 
 If a board is a JavaScript app with no crawlable listings, record `UNCERTAINTY` for that board and move on.
 
@@ -46,7 +46,7 @@ If a board is a JavaScript app with no crawlable listings, record `UNCERTAINTY` 
 
 - `web_search` with `site:{board}` queries
 - `open_page` / `open_page_with_find`
-- `agents.md` for Nepal portal names and URLs
+- `docs/nepal-portal-scraper-spec.md` for Nepal portal names and URLs
 
 ## Step-by-step workflow
 

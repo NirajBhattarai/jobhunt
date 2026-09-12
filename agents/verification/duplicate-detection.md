@@ -24,7 +24,7 @@ Decide which leads are the same job. Apply `skills/duplicate-analysis.md`. Outpu
 }
 ```
 
-Each lead should already be roughly normalized (`skills/job-normalization.md`). If not, normalize first.
+Each lead should already be roughly normalized (`skills/job-normalization.md`) and carry a `lead_id` stamped by the orchestrator. If not, normalize first; refuse leads without `lead_id`.
 
 Load `skills/duplicate-analysis.md`, `skills/job-normalization.md`, `skills/source-validation.md`.
 
@@ -66,7 +66,7 @@ Ambiguous → `UNKNOWN`, do not merge. Two canonical jobs can still be flagged `
     {
       "job_key": "acme|solidity-engineer|remote",
       "canonical": {},
-      "members": ["lead_1", "lead_7"],
+      "members": ["gh-1", "board-7"],
       "decision": "SAME",
       "signals": ["identical apply URL"]
     }

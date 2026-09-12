@@ -37,9 +37,9 @@ Load `skills/web-search.md`, `skills/source-validation.md`, `skills/evidence-col
 ## Research strategy
 
 1. If `application_url_hint` is ATS or official, open it first
-2. Resolve domain from observed fields only
-3. Open careers paths and search for `{company} careers {role}`
-4. If an ATS board is found, extract jobs from that board
+2. If the hint reveals an ATS slug, fetch the ATS JSON endpoint from `skills/web-search.md` — it lists every open role with dates in one request and is not affected by JavaScript rendering
+3. Resolve domain from observed fields only
+4. Open careers paths and search for `{company} careers {role}`; if the careers page links to an ATS board, use its JSON endpoint
 5. Search the page for `target_role` and close synonyms (seniority stripped)
 6. If the role is absent, say so with evidence (page fetched, title not present)
 
@@ -74,7 +74,7 @@ Load `skills/web-search.md`, `skills/source-validation.md`, `skills/evidence-col
 | Situation | Result |
 |-----------|--------|
 | Domain unknown | `official_checked: false`, no invented website |
-| Careers is JavaScript-empty | Record `UNCERTAINTY`, try ATS search queries |
+| Careers is JavaScript-empty | Look for an ATS link in the page source; if a slug is found, use the ATS JSON endpoint. Otherwise record `UNCERTAINTY` and try `"{company}" greenhouse OR lever OR ashby` |
 | 404 on hint URL | `hint_status: 404`; still try careers root |
 | Login wall | `UNCERTAINTY` |
 
