@@ -28,6 +28,7 @@ Produce one case file per canonical job so a human can see **what we think and w
   "classification": {},
   "technical_matching": {},
   "experience_matching": {},
+  "location_matching": {},
   "contradictions": {},
   "trace": []
 }
@@ -83,9 +84,21 @@ Engineering focus:
 
 ## Role
 
-Location: 
-Remote: 
+Location (verbatim): 
+Work mode: {remote | hybrid | onsite | flexible | Unknown}
+Remote scope: {worldwide | regions … | countries … | timezone … | Unknown}
 Employment type: 
+
+## Location fit
+
+Fit: {ELIGIBLE_REMOTE | ELIGIBLE_LOCAL | RELOCATION | RELOCATION_VISA_RISK | REMOTE_RESTRICTED | TIMEZONE_CONFLICT | INELIGIBLE | UNKNOWN}
+Relocation target: {country or —}
+Visa sponsorship: {YES | NO | UNKNOWN}
+Relocation offered: {YES | NO | UNKNOWN}
+Time-zone overlap from Kathmandu: {hours or —}
+
+Why:
+…
 
 ## Technologies
 
@@ -118,7 +131,7 @@ None / details from contradiction-analysis
 
 ## Research trace
 
-DISCOVERED → SOURCE IDENTIFIED → COMPANY IDENTIFIED → OFFICIAL SOURCE CHECKED → JOB VERIFIED → FRESHNESS CHECKED → DUPLICATES CHECKED → CONTRADICTIONS CHECKED → TECHNOLOGY ANALYZED → CANDIDATE MATCHED
+DISCOVERED → SOURCE IDENTIFIED → COMPANY IDENTIFIED → OFFICIAL SOURCE CHECKED → JOB VERIFIED → FRESHNESS CHECKED → DUPLICATES CHECKED → CONTRADICTIONS CHECKED → TECHNOLOGY ANALYZED → CANDIDATE MATCHED → LOCATION MATCHED
 
 (Mark skipped stages as SKIPPED: reason)
 ```
@@ -129,6 +142,7 @@ DISCOVERED → SOURCE IDENTIFIED → COMPANY IDENTIFIED → OFFICIAL SOURCE CHEC
 - [ ] Unknown fields not filled
 - [ ] Trace complete
 - [ ] Match does not appear before verification
+- [ ] Location fit section present with the deciding excerpt in Why
 
 ## Do not
 

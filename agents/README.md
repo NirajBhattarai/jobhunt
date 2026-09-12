@@ -12,7 +12,8 @@ orchestrator
   │     github-job-discovery
   │     hiring-repository-discovery
   │     company-job-discovery
-  │     job-board-discovery
+  │     job-board-discovery  (× region)
+  │     hn-hiring-discovery
   ├── research
   │     company-research
   │     github-company-research
@@ -29,6 +30,7 @@ orchestrator
   │     role-classification
   │     technical-matching
   │     experience-matching
+  │     location-matching
   └── output
         evidence-report
         job-report
@@ -48,12 +50,14 @@ orchestrator
 | `freshness-analysis.md` | ACTIVE / RECENT / STALE / CLOSED / UNKNOWN |
 | `duplicate-analysis.md` | Same-job merge rules |
 | `contradiction-analysis.md` | Conflict records |
+| `location-normalization.md` | Work mode, remote scope, region expansion, time-zone windows, visa/relocation signals |
 
 ## Data flow between agents
 
 | Producer | Field(s) | Consumer |
 |----------|----------|----------|
-| discovery agents | `leads[]` (raw) | orchestrator stamps `lead_id`, normalizes → `duplicate-detection` |
+| discovery agents (GitHub, HN, boards × region) | `leads[]` (raw, `location` verbatim, `visa_sponsorship` if structured) | orchestrator stamps `lead_id`, normalizes, location pre-screens → `duplicate-detection` |
+| `location-matching` | `location_fit`, `relocation_target`, `location.*` | `job-report`, `research-summary` (sort key + breakdown, never a gate) |
 | `duplicate-detection` | `canonical_jobs[]` with `members[]` | orchestrator `canonical_jobs` map, keyed by `job_key` |
 | `company-job-discovery` | `target_role_found`, `matching_positions`, `absence_evidence` | `job-verification`, `freshness-verification`, `contradiction-analysis` |
 | `freshness-verification` | `freshness`, `apply_url_http_status` | `job-verification`, `research-summary` |

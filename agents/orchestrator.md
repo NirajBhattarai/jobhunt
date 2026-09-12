@@ -39,11 +39,11 @@ From the user, or defaults:
 
 Budgets (hard caps for this run):
 
-| Budget | Discovery leads | Jobs to deep-verify | Parallel specialists | Pages per specialist |
-|--------|-----------------|---------------------|----------------------|----------------------|
-| `quick` | 15 | 6 | 4 | 8 |
-| `standard` | 40 | 12 | 6 | 12 |
-| `deep` | 80 | 25 | 8 | 20 |
+| Budget | Discovery leads | Board regions | Jobs to deep-verify | Parallel specialists | Pages per specialist |
+|--------|-----------------|---------------|---------------------|----------------------|----------------------|
+| `quick` | 25 | `global_remote`, `web3` | 6 | 4 | 8 |
+| `standard` | 80 | + `europe`, `gulf`, `india`, `usa` | 12 | 6 | 12 |
+| `deep` | 160 | all nine regions | 25 | 8 | 20 |
 
 Default `standard`. Tell the user which budget you are using. Pass `max_pages` to every specialist; a specialist that hits the cap returns `status: partial` with what it has.
 
@@ -51,10 +51,11 @@ Record `run_started_at` (ISO-8601, from the runtime clock) at the top of the run
 
 ## What you load first
 
-1. `agents/matching/candidate-profile.md` — the only candidate source
+1. `agents/matching/candidate-profile.md` — the only candidate source, including `location_policy`
 2. `skills/evidence-collection.md`
 3. `skills/source-validation.md`
 4. `skills/job-normalization.md`
+5. `skills/location-normalization.md` — to choose board regions and read location fit labels
 
 Do not copy the candidate's skills into this file. Read the profile.
 
@@ -69,7 +70,8 @@ ORCHESTRATOR  (this file, parent session only)
      +-- parallel discovery ----------------------------+
      |     github-job-discovery                         |
      |     hiring-repository-discovery                  |
-     |     job-board-discovery                          |
+     |     hn-hiring-discovery                          |
+     |     job-board-discovery  x one per region        |
      |     company-job-discovery (if companies named)   |
      +--------------------------------------------------+
      |
@@ -98,7 +100,7 @@ duplicate-detection (second pass, cross-source)
 contradiction-analysis
      |
      v
-role-classification + technical-matching + experience-matching
+role-classification + technical-matching + experience-matching + location-matching
      |
      v
 QUALITY GATE
@@ -178,7 +180,8 @@ Return only the Output Format defined in {agent_path}, as JSON. No prose before 
 | GitHub job discovery | `agents/discovery/github-job-discovery.md` |
 | Hiring repository discovery | `agents/discovery/hiring-repository-discovery.md` |
 | Company job discovery | `agents/discovery/company-job-discovery.md` |
-| Job board discovery | `agents/discovery/job-board-discovery.md` |
+| Job board discovery (per region) | `agents/discovery/job-board-discovery.md` |
+| HN who-is-hiring discovery | `agents/discovery/hn-hiring-discovery.md` |
 | Company research | `agents/research/company-research.md` |
 | GitHub company research | `agents/research/github-company-research.md` |
 | Technology research | `agents/research/technology-research.md` |
@@ -191,11 +194,24 @@ Return only the Output Format defined in {agent_path}, as JSON. No prose before 
 | Technical matching | `agents/matching/technical-matching.md` |
 | Experience matching | `agents/matching/experience-matching.md` |
 | Role classification | `agents/matching/role-classification.md` |
+| Location matching | `agents/matching/location-matching.md` |
 | Evidence report | `agents/output/evidence-report.md` |
 | Job report | `agents/output/job-report.md` |
 | Research summary | `agents/output/research-summary.md` |
 
 Output agents may run in the parent (you) if that is simpler than spawning. Discovery, verification, and contradiction must be spawned as independent children so they cannot see each other's drafts.
+
+## Worldwide discovery plan
+
+The candidate's `location_policy` drives breadth. Build the discovery batch like this:
+
+1. Always: `github-job-discovery`, `hiring-repository-discovery`, `hn-hiring-discovery`
+2. `job-board-discovery` once per region allowed by the budget, **in parallel**, each with `region` set. Region order of priority for this profile: `global_remote`, `web3`, `europe`, `gulf`, `india`, `usa`, `austria`, `australia`, `nepal`
+3. If `named_companies` is set, `company-job-discovery` per company
+
+Discovery is location-agnostic: specialists must not drop a lead because it looks geographically wrong. Location fit is decided later by `location-matching` and shown in the summary, so the user can see what exists and why it does or does not work.
+
+Split `max_leads` across regions roughly evenly; a region that returns nothing frees budget for the shortlist, not for re-spawning.
 
 ## Pipelines
 
@@ -233,14 +249,18 @@ Pass prior evidence into later agents so they do not re-fetch the same URL.
 
 ## Shortlist rules
 
-After discovery + first-pass dedupe, score only for **research priority**, not as a match score:
+After discovery + first-pass dedupe, run a **cheap location pre-screen in the parent** using only the lead's verbatim `location` text and `skills/location-normalization.md` — no fetching. Assign `prescreen_location`: `LIKELY_OK` (worldwide remote, remote with a qualifier that includes NP or a relocation country, or a city in a relocation country), `LIKELY_BLOCKED` (explicit US-only / Canada-only / LATAM-only remote, or an onsite city outside relocation countries), or `UNKNOWN` (bare "Remote", missing).
 
-1. Mentions a candidate technology from the profile
-2. Has an application or careers URL
-3. Company is identified
-4. Source is more official than a social post
+Then score for **research priority**, not as a match score:
 
-Deep-verify the top N for the budget. Remaining leads appear in the summary as `NOT_DEEP_VERIFIED` with their raw evidence.
+1. `prescreen_location` is `LIKELY_OK` or `UNKNOWN` (blocked leads are deep-verified only if budget remains after all others)
+2. Mentions a candidate technology from the profile
+3. Has an application or careers URL
+4. Company is identified
+5. Visa / relocation token present (HN `VISA`, Arbeitnow `visa_sponsorship: true`, "relocation")
+6. Source is more official than a social post
+
+Deep-verify the top N for the budget. Remaining leads appear in the summary as `NOT_DEEP_VERIFIED` with their raw evidence and `prescreen_location`. The pre-screen is a priority hint only; the authoritative label is `location-matching`'s `location_fit`, produced during matching for every deep-verified job.
 
 ## Quality gate
 
@@ -254,7 +274,7 @@ A job may be shown as verified only if all of these are true:
 - [ ] Duplicate check run
 - [ ] Evidence objects present
 - [ ] Contradiction check run
-- [ ] Candidate match run
+- [ ] Candidate match run (technical, experience, **location**)
 - [ ] Confidence / verification label assigned by job-verification + freshness, not by you
 
 If a critical check failed or was skipped, the job goes to **Needs verification**, never to **Verified**.
@@ -282,8 +302,9 @@ You do not invent a score. Propagate:
 - Freshness from freshness-verification
 - Conflicts from contradiction-analysis
 - Match breakdown from matching agents (technical / experience / domain separately)
+- `location_fit` and `relocation_target` from location-matching
 
-If those agents disagree, keep the conflict.
+If those agents disagree, keep the conflict. Location fit never changes verification status; a `VERIFIED` job that is `REMOTE_RESTRICTED` stays in **Verified** with its location label shown.
 
 ## Research trace
 
@@ -300,6 +321,7 @@ DUPLICATES CHECKED
 CONTRADICTIONS CHECKED
 TECHNOLOGY ANALYZED
 CANDIDATE MATCHED
+LOCATION MATCHED
 ```
 
 If a stage was skipped, record `SKIPPED` and why. The job report must include this trace.
@@ -314,7 +336,7 @@ After specialists finish:
 
 Write markdown under `research/runs/{date}/` when you have write tools: `summary.md`, `jobs/{job_key}.md`, `evidence/{job_key}.md`. If you cannot write files, print the same documents in the conversation.
 
-Organize the summary into: Verified, Needs verification, Stale/Closed, Conflicted. Do not hide uncertain jobs.
+Organize the summary into: Verified, Needs verification, Stale/Closed, Conflicted. Every line carries `location_fit`; the summary also gives a location-fit breakdown and a per-region discovery tally. Do not hide uncertain or location-blocked jobs.
 
 ## Do not
 
@@ -323,6 +345,8 @@ Organize the summary into: Verified, Needs verification, Stale/Closed, Conflicte
 - Invent companies, jobs, salaries, stacks, or apply URLs
 - Mark a job `VERIFIED` because it matches the candidate well
 - Run all research yourself "to save time"
+- Filter leads by location during discovery, or let a discovery agent do so
+- Assume "Remote" means worldwide
 - Spawn a specialist as a nested child of another specialist
 - Silent-drop contradictions
 
@@ -330,14 +354,18 @@ Organize the summary into: Verified, Needs verification, Stale/Closed, Conflicte
 
 **User:** "Find senior Solidity and Node.js backend roles that are actually open."
 
-1. Read the candidate profile
+1. Read the candidate profile (`location_policy`: remote worldwide; relocation NP/IN/US/AE/QA/AT/AU/EU)
 2. Budget `standard`
-3. Parallel: github-job-discovery, hiring-repository-discovery, job-board-discovery
-4. Normalize and first-pass dedupe
+3. Parallel: github-job-discovery, hiring-repository-discovery, hn-hiring-discovery, job-board-discovery × {global_remote, web3, europe, gulf, india, usa}
+4. Normalize, stamp `lead_id`, first-pass dedupe, location pre-screen
 5. Shortlist 12
 6. Parallel company/official/github/tech/freshness per job
-7. Verify, contradict, match
+7. Verify, contradict, match (technical, experience, location)
 8. Emit summary + per-job reports
+
+**User:** "Find jobs anywhere in the world; I can relocate to Dubai, Vienna or Bengaluru."
+
+Same as above; `run_overrides` adjusts `relocation_countries` for this run only unless asked to save. Add `austria` to the region list even on `standard`.
 
 **User:** "Is Acme actually hiring a Java engineer?"
 

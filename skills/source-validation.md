@@ -17,7 +17,7 @@ Single source of truth for source types and reliability. Agents label every URL 
 | `engineering_blog` | 0.80 | Company engineering blog announcing a role or stack |
 | `established_job_board` | 0.55 | LinkedIn, Wellfound, web3.career, Remote OK, Nepali portals in `docs/nepal-portal-scraper-spec.md` |
 | `github_community` | 0.45 | awesome-jobs lists, hiring READMEs, community "who is hiring" repos |
-| `social_community` | 0.25 | X/Twitter, Discord screenshots, HN comments, Reddit |
+| `social_community` | 0.25 | X/Twitter, Discord screenshots, Reddit. HN "Who is hiring" comments are also this type, but carry a reliable `created_at` date and are usually posted by the employer — a strong lead, still not verification |
 
 Reliability is a prior, not a verdict. A fresh official 404 beats a high-reliability guess that the job exists.
 

@@ -31,7 +31,7 @@ research/runs/2026-09-12/
 | Path | Purpose |
 |------|---------|
 | [`AGENTS.md`](AGENTS.md) | Operating instructions every AI session loads |
-| [`agents/`](agents/) | Agent contracts — orchestrator plus 19 specialists |
+| [`agents/`](agents/) | Agent contracts — orchestrator plus 21 specialists |
 | [`skills/`](skills/) | Shared schemas and rules (single source of truth) |
 | [`docs/nepal-portal-scraper-spec.md`](docs/nepal-portal-scraper-spec.md) | Separate, **unimplemented** Python scraper spec; only its portal list is used, by `job-board-discovery`, when the candidate is in Nepal |
 | `.grok/` `.claude/` `.cursor/` | `/job-research` skill entry points per runtime |
@@ -44,7 +44,8 @@ orchestrator
     │     github-job-discovery
     │     hiring-repository-discovery
     │     company-job-discovery
-    │     job-board-discovery
+    │     job-board-discovery  (× region)
+    │     hn-hiring-discovery
     ├── research
     │     company-research
     │     github-company-research
@@ -61,6 +62,8 @@ orchestrator
     │     role-classification
     │     technical-matching
     │     experience-matching
+  │     location-matching
+    │     location-matching
     └── output
           evidence-report
           job-report
@@ -82,6 +85,11 @@ Shared rules (single source of truth): [`skills/`](skills/)
 | `freshness-analysis.md` | ACTIVE / RECENT / STALE / CLOSED / UNKNOWN |
 | `duplicate-analysis.md` | Same-job merge rules |
 | `contradiction-analysis.md` | Conflict records |
+| `location-normalization.md` | Work mode, remote scope, region expansion, time-zone windows, visa/relocation signals |
+
+## Worldwide search and relocation
+
+The profile's `location_policy` says where the candidate can work: remote from anywhere, plus onsite/hybrid in a list of relocation countries (currently Nepal, India, USA, UAE, Qatar, Austria, Australia, any European country). Discovery fans out per region — global remote feeds, Web3 boards, EU/DACH (incl. Arbeitnow's visa-sponsorship flag), Gulf, India, USA, Australia, Nepal, plus GitHub and HN "Who is hiring" — and never filters by location. `location-matching` then labels each job (`ELIGIBLE_REMOTE`, `RELOCATION → AE`, `REMOTE_RESTRICTED`, `TIMEZONE_CONFLICT`, …) with the exact listing excerpt that decided it, so a "Remote (US only)" role is shown for what it is instead of silently dropped or wrongly counted.
 
 ## Quality bar
 

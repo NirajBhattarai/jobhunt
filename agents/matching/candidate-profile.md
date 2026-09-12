@@ -32,11 +32,27 @@ Run-level amendments override the YAML for that run only, and must be listed in 
 name: null                    # optional; omit from public reports if null
 seniority: Senior
 years_experience: null        # number or null if unstated
-remote_preference: remote     # remote | hybrid | onsite | any
-locations:
-  - Remote
-  - Kathmandu
-  - Europe
+remote_preference: any        # remote | hybrid | onsite | any
+location_policy:
+  # Remote: accept a remote role from an employer in ANY country, as long as
+  # the listing's remote-eligibility (hiring regions / time zones) does not
+  # exclude the candidate's current location or a relocation country below.
+  remote: worldwide
+  current_location: Kathmandu, Nepal
+  # Onsite / hybrid: acceptable ONLY in these countries (relocation OK).
+  relocation_countries:
+    - Nepal
+    - India
+    - United States
+    - United Arab Emirates      # Dubai, Abu Dhabi
+    - Qatar                     # Doha
+    - Austria
+    - Australia
+    - "*Europe"                 # any European country (see skills/location-normalization.md)
+  # Set true if a work visa is required for onsite roles outside Nepal.
+  # null = unknown; location-matching then reports sponsorship as UNCERTAINTY.
+  needs_visa_sponsorship: null
+  timezone: "Asia/Kathmandu"   # UTC+5:45; used for time-zone-window checks
 salary_min: null
 salary_currency: USD
 employment_types:
@@ -116,8 +132,9 @@ None. This agent does not search the web. If the user asks "what should I add to
 1. Read the YAML
 2. Apply `run_overrides` from the user message
 3. Normalize skill names using `skills/technology-detection.md` aliases
-4. Emit the snapshot
-5. If the user asked to persist changes, edit the YAML block and leave the rest of this file intact
+4. Normalize `relocation_countries` to ISO-3166 alpha-2 codes using `skills/location-normalization.md` (`*Europe` → `*EU`)
+5. Emit the snapshot
+6. If the user asked to persist changes, edit the YAML block and leave the rest of this file intact
 
 ## Evidence requirements
 
@@ -137,8 +154,14 @@ If YAML is malformed, stop and ask the user to fix it. Do not guess the profile.
 {
   "seniority": "Senior",
   "years_experience": null,
-  "remote_preference": "remote",
-  "locations": ["Remote", "Kathmandu", "Europe"],
+  "remote_preference": "any",
+  "location_policy": {
+    "remote": "worldwide",
+    "current_location": "Kathmandu, Nepal",
+    "relocation_countries": ["NP", "IN", "US", "AE", "QA", "AT", "AU", "*EU"],
+    "needs_visa_sponsorship": null,
+    "timezone": "Asia/Kathmandu"
+  },
   "salary_min": null,
   "salary_currency": "USD",
   "employment_types": ["full-time"],

@@ -18,6 +18,7 @@ The project skill `/job-research` (registered for Grok, Claude Code, and Cursor)
 - Verification labels come from `agents/verification/job-verification.md`; freshness labels from `agents/verification/freshness-verification.md`. The orchestrator propagates them and does not override them.
 - Conflicts are output, not noise. Do not resolve a disagreement by dropping a source.
 - Matching happens after verification and never gates it. Do not create a "recommended" bucket that hides unverified or low-match jobs.
+- Discovery is worldwide and location-agnostic. Location fit (`ELIGIBLE_REMOTE`, `RELOCATION`, `REMOTE_RESTRICTED`, …) is assigned by `agents/matching/location-matching.md` from the profile's `location_policy` and shown on every job; nothing is filtered out for location. "Remote" without a qualifier is `UNKNOWN`, not worldwide.
 
 ## Editing this repo
 

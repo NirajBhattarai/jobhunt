@@ -56,6 +56,43 @@ Rules:
 - A job present in the API with a `updated_at` / `publishedAt` field is a date signal for `skills/freshness-analysis.md`.
 - Workday and iCIMS have no stable public JSON; fetch the HTML job page directly.
 
+## Job-board public JSON / RSS feeds (prefer over board HTML)
+
+Several boards publish machine-readable feeds. One fetch returns dozens of listings with dates and, on some boards, structured location and visa fields. Feed hits are still `established_job_board` leads; record the feed URL as `source_url` and the listing's own URL as `application_url`.
+
+| Board | Feed | Useful fields |
+|-------|------|---------------|
+| Remotive | `https://remotive.com/api/remote-jobs?search={term}&limit=50` | `title`, `company_name`, `candidate_required_location`, `publication_date`, `url` |
+| Arbeitnow (EU / DACH, relocation) | `https://www.arbeitnow.com/api/job-board-api?page={n}` | `title`, `company_name`, `location`, `remote`, **`visa_sponsorship`**, `created_at`, `url`, `tags` |
+| Remote OK | `https://remoteok.com/api?tag={term}` | `position`, `company`, `location`, `date`, `url`, `tags` (first element is metadata; skip it) |
+| Jobicy | `https://jobicy.com/api/v2/remote-jobs?count=50&tag={term}` | `jobTitle`, `companyName`, `jobGeo`, `pubDate`, `url` |
+| Himalayas | `https://himalayas.app/jobs/api?limit=50&q={term}` | `title`, `companyName`, `locationRestrictions`, `pubDate`, `applicationLink` |
+| We Work Remotely | `https://weworkremotely.com/categories/remote-programming-jobs.rss` | RSS `title` ("Company: Role"), `region`, `pubDate`, `link` |
+| Hacker News Who is hiring | see `agents/discovery/hn-hiring-discovery.md` (Algolia API) | comment text, `created_at` |
+
+Rules:
+
+- Feeds change. If a URL 404s or returns HTML, record `UNCERTAINTY` for that board and fall back to its HTML search page. Do not fabricate fields the feed did not return.
+- Run at most 2–3 `{term}` values per feed (e.g. `solidity`, `node`, `java`); dedupe by `url`.
+- `candidate_required_location` / `locationRestrictions` / `jobGeo` / `region` are **remote-scope** signals — copy them verbatim into the lead's `location` so location-matching can classify them.
+- web3.career, cryptojobslist and cryptocurrencyjobs.co have no stable public feed; fetch their HTML listing pages.
+
+## Regional board families
+
+Choose by the candidate's `location_policy`. Each family is one `region` value for `job-board-discovery`.
+
+| `region` | Boards (HTML unless a feed exists above) | Notes |
+|----------|------------------------------------------|-------|
+| `global_remote` | Remotive, Remote OK, Jobicy, Himalayas, We Work Remotely, Working Nomads, HN | Always run |
+| `web3` | web3.career, cryptojobslist.com, cryptocurrencyjobs.co, remote3.co | Always run for a blockchain candidate |
+| `europe` | Arbeitnow, EU-Remote-Jobs, Landing.jobs, Relocate.me (visa-sponsoring roles), StepStone | `*EU` relocation |
+| `austria` | karriere.at, devjobs.at, StepStone.at, Arbeitnow (Vienna/Graz) | |
+| `gulf` | Bayt, GulfTalent, LinkedIn public search `Dubai` / `Doha`, naukrigulf | UAE, Qatar |
+| `india` | Instahyre, Cutshort, Wellfound (India filter), Naukri public pages, hirist.tech | Public listing pages only; skip login-gated detail |
+| `usa` | Built In, Wellfound, Otta / Welcome to the Jungle, LinkedIn public, HN | Most "Remote (US)" leads will be `REMOTE_RESTRICTED`; still record them |
+| `australia` | Seek, LinkedIn public `Sydney` / `Melbourne` | |
+| `nepal` | Merojob, KumariJob, JobsNepal, Jobaxle, Froxjob (see `docs/nepal-portal-scraper-spec.md`) | Small volume; cap 3 pages |
+
 ## Search-snippet policy
 
 A search snippet that says "Senior Engineer — Acme — Apply" is **not** proof the job is open. Open the URL. If the live page 404s, the snippet is stale.
